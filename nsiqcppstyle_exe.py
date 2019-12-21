@@ -72,7 +72,7 @@ Usage: nsiqcppstyle [Options]
   -h            Show this help
   -v            Show detail ouput(verbose mode)
   -r            Show rule list
-  -o path       Set the output path. It's only applied when the output is csv or xml.
+  -o path       Set the output path. It's only applied when the output is csv, xml or json.
   -f path       Set the filefilter path. If not provided, it uses the default filterpath
                 (target/filefilter.txt)
                 If you provide the file path (not a folder path) for the target,
@@ -82,11 +82,11 @@ Usage: nsiqcppstyle [Options]
   --list-rules / -r  Show all rules available.
                 Add file extensions to be counted as assigned languages.
   -s            Assign Filter scope name to be applied in this analysis
-  --output=     output format 'emacs', 'vs7', 'csv', 'xml' and 'eclipse'. Default value is vs7
+  --output=     output format 'emacs', 'vs7', 'csv', 'xml', 'json' and 'eclipse'. Default value is vs7
                 emacs, vs7, eclipse output the result on the stdout in the form
                 that each tool recognizes.
-                csv and xml outputs the result on the file "nsiqcppstyle_result.csv"
-                "nsiqcppstyle_result.xml" respectively, if you don't provide -o option.
+                If you don't provide -o option, csv, xml and outputs the result on the file "nsiqcppstyle_result.csv"
+                "nsiqcppstyle_result.xml" and "nsiqcppstyle_result.json", respectively. 
   --ci          Continuous Integration mode. If this mode is on, this tool only reports summary.
   --quiet / -q  Quiet mode. If this mode is on, this tool only reports errors.
 
@@ -159,7 +159,7 @@ def main(argv=None):
         updateNsiqCppStyle = False
         for o, a in opts:
             if o in ("-h", "--help"):
-                print (title)
+                print(title)
                 Usage()
             elif o in ("-r", "--list-rules"):
                 ShowRuleList()
@@ -178,7 +178,7 @@ def main(argv=None):
             elif o == "--show-url":
                 _nsiqcppstyle_state.showUrl = True
             elif o == '--output':
-                if not a in ('emacs', 'vs7', 'csv', 'xml', 'eclipse'):
+                if not a in ('emacs', 'vs7', 'csv', 'xml', 'eclipse', 'json'):
                     print(title)
                     ShowMessageAndExit(
                         'The only allowed output formats are emacs, vs7 and csv.')

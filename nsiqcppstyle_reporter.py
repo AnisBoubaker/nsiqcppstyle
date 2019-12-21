@@ -31,12 +31,15 @@ from nsiqcppstyle_outputer import _consoleOutputer as console
 import nsiqcppstyle_rulemanager
 import sys
 import csv
+import json
 import os
 
 ##########################################################################
 csvfile = None
 writer = None
 target = None
+globalReport = {}
+fileCount = 0
 
 
 def PrepareReport(outputPath, format):
@@ -47,15 +50,19 @@ def PrepareReport(outputPath, format):
     if format == "csv":
         if os.path.isdir(outputPath):
             outputPath = os.path.join(outputPath, "nsiqcppstyle_report.csv")
-        csvfile = file(outputPath, "wb")
+        csvfile = open(outputPath, "wb")
         writer = csv.writer(csvfile)
         writer.writerow(("File", "Line", "Column",
                          "Message", "Rule", "Rule Url"))
     elif format == "xml":
         if os.path.isdir(outputPath):
             outputPath = os.path.join(outputPath, "nsiqcppstyle_report.xml")
-        writer = file(outputPath, "wb")
+        writer = open(outputPath, "wb")
         writer.write("<?xml version='1.0'?>\n<checkstyle version='4.4'>\n")
+    elif format == "json":
+        if os.path.isdir(outputPath):
+            outputPath = os.path.join(outputPath, "nsiqcppstyle_report.json")
+        writer = open(outputPath, "w")
 
 
 def ReportSummaryToScreen(analyzedFiles, nsiqcppstyle_state, filter):
@@ -100,9 +107,14 @@ def ReportSummaryToScreen(analyzedFiles, nsiqcppstyle_state, filter):
 
 
 def CloseReport(format):
+    global writer
+    global globalReport
     if format == "xml":
-        global writer
         writer.write("</checkstyle>\n")
+        writer.close()
+    elif format == "json":
+        jsonReport = json.dumps(globalReport, indent=4)
+        writer.write(str(jsonReport))
         writer.close()
 ##########################################################################
 
@@ -165,11 +177,23 @@ def StartFile(dirname, filename):
     if _nsiqcppstyle_state.output_format == 'xml':
         writer.write("<file name='%s'>\n" %
                      (os.path.join(target, dirname[1:], filename)))
+    if _nsiqcppstyle_state.output_format == 'json':
+        global globalReport
+        global fileCount
+        fullPath = os.path.join(dirname[1:], filename);
+        globalReport[fileCount] = {}
+        globalReport[fileCount]['fullPath'] = fullPath
+        globalReport[fileCount]['dir'] = dirname[1:]
+        globalReport[fileCount]['fileName'] = filename
+        globalReport[fileCount]['errors'] = []
 
 
 def EndFile():
     if _nsiqcppstyle_state.output_format == 'xml':
         writer.write("</file>\n")
+    elif _nsiqcppstyle_state.output_format == 'json':
+        global fileCount
+        fileCount += 1
 
 
 _nsiqcppstyle_state = nsiqcppstyle_state._nsiqcppstyle_state
@@ -230,6 +254,11 @@ def ErrorInternal(t, ruleName, message):
         elif _nsiqcppstyle_state.output_format == 'xml':
             writer.write("""<error line='%d' col='%d' severity='warning' message='%s' source='%s'/>\n""" %
                          (t.lineno, t.column, escape(message).replace("'", "\""), ruleName))
+        elif _nsiqcppstyle_state.output_format == 'json':
+            global globalReport
+            global fileCount
+            globalReport[fileCount]['errors'] += [{'ruleName': ruleName, 'line': t.lineno, 'column': t.column,
+                                                  'message': escape(message)}]
 
 
 Error = ErrorInternal
